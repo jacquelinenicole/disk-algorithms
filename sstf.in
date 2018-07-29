@@ -1,0 +1,10 @@
+Use sstf
+lowerCYL 00000
+upperCYL 4999
+initCYL 1000
+cylreq 2069
+cylreq 1212
+cylreq 544
+cylreq 1618
+cylreq 3681
+end
