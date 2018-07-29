@@ -104,6 +104,8 @@ func runAlgorithm(algorithm String, lowerCyl int, upperCyl int, initCyl int, cyl
 }
 
 
+
+/* fcfs */
 func fcfs(lowerCyl int, upperCyl int, lastCyl int, cylReqs int[]) int {
 	traversalCount := 0
 
@@ -120,6 +122,9 @@ func fcfs(lowerCyl int, upperCyl int, lastCyl int, cylReqs int[]) int {
 	return traversalCount
 }
 
+
+
+/* sstf */
 func sstf(lowerCyl int, upperCyl int, lastCyl int, cylReqs int[]) int {
 	traversalCount := 0
 
@@ -145,7 +150,25 @@ func sstf(lowerCyl int, upperCyl int, lastCyl int, cylReqs int[]) int {
 	return traversalCount
 }
 
+func findShortestSeekIndex(lastCyl int, lowerCyl int, upperCyl int, unserviced int[]) int {
+	index := -1
+	for (int i := 0 ; i < len(unserviced) ; i++) {
+		if index == -1 || calcTraversal(lastCyl, unserviced[i], lowerCyl, upperCyl) < unserviced[index] {
+			index = i
+		}
+	}
 
+	return index
+}
+
+func remove(s []int, i int) []int {
+    s[len(s)-1], s[i] = s[i], s[len(s)-1]
+    return s[:len(s)-1]
+}
+
+
+
+/* scan */
 func scan(lowerCyl int, upperCyl int, initCyl int, cylReqs int[], direction int) int {
 
 	// bubble sort cylinder requests
@@ -157,17 +180,23 @@ func scan(lowerCyl int, upperCyl int, initCyl int, cylReqs int[], direction int)
 		}
 	}
 
-	scan(initCyl, cylReqs, direction)
-	scan(initCyl, cylReqs, direction)
+	direction = scanTraversal(initCyl, cylReqs, direction)
+	direction = scanTraversal(initCyl, cylReqs, direction)
 
-	return initCyl - lowerCyl + upperCyl
+	// started moving up
+	if direction > 0 {
+		return upperCyl - (initCyl + lowerCyl) + upperCyl - lowerCyl
+	} else {
+		// started moving down
+		return initCyl - lowerCyl + upperCyl - lowerCyl
+	}
 }
 
 
 // TODO: error message for out of bounds cylinder req
-func scan(initCyl int, cylReqs int[], direction int) {
+func scanTraversal(initCyl int, cylReqs int[], direction int) int {
 	if direction < 0 {
-		for i := len(cylReqs) - 1 ; i >= 0 ; i++ {
+		for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
 			if cylReqs[i] < initCyl {
 				fmt.printf("Servicing %3d\n", cylReqs[i])
 			}
@@ -183,22 +212,65 @@ func scan(initCyl int, cylReqs int[], direction int) {
 
 		direction = -1
 	}
+
+	return direction
 }
 
-func findShortestSeekIndex(lastCyl int, lowerCyl int, upperCyl int, unserviced int[]) int {
-	index := -1
-	for (int i := 0 ; i < len(unserviced) ; i++) {
-		if index == -1 || calcTraversal(lastCyl, unserviced[i], lowerCyl, upperCyl) < unserviced[index] {
-			index = i
+
+
+/* c-scan */
+func cscan(lowerCyl int, upperCyl int, initCyl int, cylReqs int[], direction int) int {
+	// bubble sort cylinder requests
+	for i := 0 ; i < len(cylReqs) ; i++ {
+		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
+			if cylReq[j] > cylReq[j+1] {
+				cylReq[j], cylReq[j+1] = cylReq[j+1], cylReq[j]
+			}
 		}
 	}
 
-	return index
+	direction = cscanTraversal(initCyl, cylReqs, direction)
+	cscanTraversal(initCyl, cylReqs, direction)
+
+	return upperCyl - lowerCyl + upperCyl - (initCyl + lowerCyl) + initCyl - lowerCyl
 }
 
-func remove(s []int, i int) []int {
-    s[len(s)-1], s[i] = s[i], s[len(s)-1]
-    return s[:len(s)-1]
+// TODO: error message for out of bounds cylinder req
+func cscanTraversal(initCyl int, cylReqs int[], direction int) int {
+	if direction == 1 { // start moving up
+		for i := 0 ; i < len(cylReqs) ; i++ {
+			if cylReqs[i] > initCyl {
+				fmt.printf("Servicing %3d\n", cylReqs[i])
+			}
+		}
+		direction = 2
+
+	} else if  direction == -1 { // start moving down
+		for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
+			if cylReqs[i] < initCyl {
+				fmt.printf("Servicing %3d\n", cylReqs[i])
+			}
+		}
+		direction = -2
+	} else if direction == 2 { // finish from the front
+		for i := 0 ; i < len(cylReqs) ; i++ {
+			if cylReqs[i] >= initCyl {
+				break
+			}
+			fmt.printf("Servicing %3d\n", cylReqs[i])
+		}
+
+	} else if direction == -2 { // finish from the back
+		for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
+			if cylReqs[i] <= initCyl {
+				break
+			}
+			fmt.printf("Servicing %3d\n", cylReqs[i])
+		}
+	}
+
+
+	return direction
 }
 
 func cylError(req int, lowerCyl int, upperCyl int) bool {
