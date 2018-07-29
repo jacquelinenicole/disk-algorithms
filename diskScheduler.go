@@ -170,7 +170,6 @@ func remove(s []int, i int) []int {
 
 /* scan */
 func scan(lowerCyl int, upperCyl int, initCyl int, cylReqs int[], direction int) int {
-
 	// bubble sort cylinder requests
 	for i := 0 ; i < len(cylReqs) ; i++ {
 		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
@@ -244,7 +243,6 @@ func cscanTraversal(initCyl int, cylReqs int[], direction int) int {
 			}
 		}
 		direction = 2
-
 	} else if  direction == -1 { // start moving down
 		for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
 			if cylReqs[i] < initCyl {
@@ -272,6 +270,49 @@ func cscanTraversal(initCyl int, cylReqs int[], direction int) int {
 
 	return direction
 }
+
+
+
+/* look */
+func look(lowerCyl int, upperCyl int, initCyl int, cylReqs int[], direction int) int {
+	// bubble sort cylinder requests
+	for i := 0 ; i < len(cylReqs) ; i++ {
+		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
+			if cylReq[j] > cylReq[j+1] {
+				cylReq[j], cylReq[j+1] = cylReq[j+1], cylReq[j]
+			}
+		}
+	}
+
+	direction = scanTraversal(initCyl, cylReqs, direction)
+	direction = scanTraversal(initCyl, cylReqs, direction)
+
+	// started moving up
+	if direction > 0 {
+		return cylReqs[len(cylReqs) - 1] - (initCyl + cylReqs[0]) + cylReqs[len(cylReqs) - 1] - cylReqs[0]
+	} else {
+		// started moving down
+		return initCyl - cylReqs[0] + cylReqs[len(cylReqs) - 1] - cylReqs[0]
+	}
+}
+
+/* c-look */
+func clook(lowerCyl int, upperCyl int, initCyl int, cylReqs int[], direction int) int {
+	// bubble sort cylinder requests
+	for i := 0 ; i < len(cylReqs) ; i++ {
+		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
+			if cylReq[j] > cylReq[j+1] {
+				cylReq[j], cylReq[j+1] = cylReq[j+1], cylReq[j]
+			}
+		}
+	}
+
+	direction = cscanTraversal(initCyl, cylReqs, direction)
+	cscanTraversal(initCyl, cylReqs, direction)
+
+	return cylReqs[len(cylReqs) - 1] - cylReqs[0] + cylReqs[len(cylReqs) - 1] - (initCyl + cylReqs[0]) + initCyl - cylReqs[0]
+}
+
 
 func cylError(req int, lowerCyl int, upperCyl int) bool {
 	if req > upperCyl || req < lowerCyl {
