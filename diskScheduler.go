@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"math"
+	"strings"
 )
 
 func main() {
@@ -85,7 +86,7 @@ func foundCyl(s *bufio.Scanner) bool {
 
 // prints data parsed from input file and calls algorithm requested
 func runAlgorithm(algorithm String, lowerCyl int, upperCyl int, initCyl int, cylReqs int[]) {
-	fmt.printf("Seek algorithm: %s\n", algorithm)
+	fmt.printf("Seek algorithm: %s\n", strings.ToUpper(algorithm))
 	fmt.printf("Lower cylinder: %3d\n", lowerCyl)
 	fmt.printf("Upper cylinder: %3d\n", upperCyl)
 	fmt.println("Cylinder requests:")
@@ -99,7 +100,7 @@ func runAlgorithm(algorithm String, lowerCyl int, upperCyl int, initCyl int, cyl
     	traversalCount := sstf(lowerCyl, upperCyl, initCyl, cylReqs)
     }
 
-    fmt.printf("%s traversal count = %d", algorithm, traversalCount)
+    fmt.printf("%s traversal count = %d", strings.ToUpper(algorithm), traversalCount)
 }
 
 
@@ -126,7 +127,7 @@ func sstf(lowerCyl int, upperCyl int, lastCyl int, cylReqs int[]) int {
 
 	// if out of bounds, print error message and remove
 	for i := 0 ; i < len(unserviced) ; i++ {
-		if cylError(req, lowerCyl, upperCyl) {
+		if cylError(unserviced[i], lowerCyl, upperCyl) {
 			remove(unserviced, i)
 		}
 
@@ -144,10 +145,49 @@ func sstf(lowerCyl int, upperCyl int, lastCyl int, cylReqs int[]) int {
 	return traversalCount
 }
 
+
+func scan(lowerCyl int, upperCyl int, initCyl int, cylReqs int[], direction int) int {
+
+	// bubble sort cylinder requests
+	for i := 0 ; i < len(cylReqs) ; i++ {
+		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
+			if cylReq[j] > cylReq[j+1] {
+				cylReq[j], cylReq[j+1] = cylReq[j+1], cylReq[j]
+			}
+		}
+	}
+
+	scan(initCyl, cylReqs, direction)
+	scan(initCyl, cylReqs, direction)
+
+	return initCyl - lowerCyl + upperCyl
+}
+
+
+// TODO: error message for out of bounds cylinder req
+func scan(initCyl int, cylReqs int[], direction int) {
+	if direction < 0 {
+		for i := len(cylReqs) - 1 ; i >= 0 ; i++ {
+			if cylReqs[i] < initCyl {
+				fmt.printf("Servicing %3d\n", cylReqs[i])
+			}
+		}
+
+		direction = 1
+	} else if direction > 0 {
+		for i := 0 ; i < len(cylReqs) ; i++ {
+			if cylReq[i] > initCyl {
+				fmt.printf("Servicing %3d\n", cylReqs[i])
+			}
+		}
+
+		direction = -1
+	}
+}
+
 func findShortestSeekIndex(lastCyl int, lowerCyl int, upperCyl int, unserviced int[]) int {
 	index := -1
-	for (int i := 0 ; i < len(unserviced) ; i++)
-	{
+	for (int i := 0 ; i < len(unserviced) ; i++) {
 		if index == -1 || calcTraversal(lastCyl, unserviced[i], lowerCyl, upperCyl) < unserviced[index] {
 			index = i
 		}
