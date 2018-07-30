@@ -37,7 +37,7 @@ func parse(fileName string) (string, int, int, int, []int) {
     s := bufio.NewScanner(file)
 	s.Split(bufio.ScanWords)
 	
-	algorithm := getValue(s, "Use")
+	algorithm := getValue(s, "use")
 	lowerCyl, _ := strconv.Atoi(getValue(s, "lowerCYL"))
 	upperCyl, _ := strconv.Atoi(getValue(s, "upperCYL"))
 	initCyl, _ := strconv.Atoi(getValue(s, "initCYL"))
@@ -86,11 +86,12 @@ func foundCyl(s *bufio.Scanner) bool {
 // prints data parsed from input file and calls algorithm requested
 func runAlgorithm(algorithm string, lowerCyl int, upperCyl int, initCyl int, cylReqs []int) {
 	fmt.Printf("Seek algorithm: %s\n", strings.ToUpper(algorithm))
-	fmt.Printf("Lower cylinder: %3d\n", lowerCyl)
-	fmt.Printf("Upper cylinder: %3d\n", upperCyl)
-	fmt.Println("Cylinder requests:")
+	fmt.Printf("\tLower cylinder: %5d\n", lowerCyl)
+	fmt.Printf("\tUpper cylinder: %5d\n", upperCyl)
+	fmt.Printf("\tInit cylinder: %5d\n", initCyl)
+	fmt.Println("\tCylinder requests:")
 	for _, req := range cylReqs {
-		fmt.Printf("Cylinder %3d\n", req)
+		fmt.Printf("\t\tCylinder %5d\n", req)
 	}
 
     traversalCount := 0
@@ -98,12 +99,14 @@ func runAlgorithm(algorithm string, lowerCyl int, upperCyl int, initCyl int, cyl
     	traversalCount = fcfs(lowerCyl, upperCyl, initCyl, cylReqs)
     } else if (algorithm == "sstf") {
     	traversalCount = sstf(lowerCyl, upperCyl, initCyl, cylReqs)
-    } 
+    } else if (algorithm == "scan" || algorithm == "c-scan" || algorithm == "look" || algorithm == "c-look") {
+    	traversalCount = scanlook(algorithm, lowerCyl, upperCyl, initCyl, cylReqs)
+    } else {
+    	fmt.Println("Invalid algorithm requested")
+    }
 
-
-    fmt.Printf("%s traversal count = %d", strings.ToUpper(algorithm), traversalCount)
+    fmt.Printf("%s traversal count = %d\n", strings.ToUpper(algorithm), traversalCount)
 }
-
 
 
 /* fcfs */
@@ -115,14 +118,13 @@ func fcfs(lowerCyl int, upperCyl int, lastCyl int, cylReqs []int) int {
 			continue
 		}
 
-		fmt.Printf("Servicing %3d\n", req)
-		traversalCount += calcTraversal(lastCyl, req, lowerCyl, upperCyl)
+		fmt.Printf("Servicing %5d\n", req)
+		traversalCount += calcTraversal(lastCyl, req)
 		lastCyl = req
 	}
 
 	return traversalCount
 }
-
 
 
 /* sstf */
@@ -136,14 +138,13 @@ func sstf(lowerCyl int, upperCyl int, lastCyl int, cylReqs []int) int {
 		if cylError(unserviced[i], lowerCyl, upperCyl) {
 			unserviced = remove(unserviced, i)
 		}
-
 	}
 
 	for len(unserviced) > 0 {
-		currCylIndex := findShortestSeekIndex(lastCyl, lowerCyl, upperCyl, unserviced)
-		fmt.Printf("Servicing %3d\n", unserviced[currCylIndex])
+		currCylIndex := findShortestSeekIndex(lastCyl, lowerCyl, unserviced)
+		fmt.Printf("Servicing %d\n", unserviced[currCylIndex])
 
-		traversalCount += calcTraversal(lastCyl, unserviced[currCylIndex], lowerCyl, upperCyl)
+		traversalCount += calcTraversal(lastCyl, unserviced[currCylIndex])
 		lastCyl = unserviced[currCylIndex]
 		unserviced = remove(unserviced, currCylIndex)
 	}
@@ -151,10 +152,10 @@ func sstf(lowerCyl int, upperCyl int, lastCyl int, cylReqs []int) int {
 	return traversalCount
 }
 
-func findShortestSeekIndex(lastCyl int, lowerCyl int, upperCyl int, unserviced []int) int {
+func findShortestSeekIndex(lastCyl int, lowerCyl int, unserviced []int) int {
 	index := 0
 	for i := 0 ; i < len(unserviced) ; i++ {
-		if calcTraversal(lastCyl, unserviced[i], lowerCyl, upperCyl) < unserviced[index] {
+		if calcTraversal(lastCyl, unserviced[i]) < calcTraversal(lastCyl, unserviced[index]) {
 			index = i
 		}
 	}
@@ -167,182 +168,100 @@ func remove(s []int, i int) []int {
     return s[:len(s)-1]
 }
 
-func calcTraversal(lastCyl int, currCyl int, start int, max int) int {
-	higher := 0
-	lower := 0
+func calcTraversal(lastCyl int, currCyl int) int {
+	higher := currCyl
+	lower := lastCyl
 
 	if lastCyl > currCyl {
 		higher = lastCyl
 		lower = currCyl
+	}
+
+	return higher - lower
+}
+
+
+/* scan, c-scan, look, c-look */
+func scanlook(algorithm string, lowerCyl int, upperCyl int, initCyl int, cylReqs []int) int {
+	// bubble sort cylinder requests
+	for i := 0 ; i < len(cylReqs) ; i++ {
+		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
+			if cylReqs[j] > cylReqs[j+1] {
+				cylReqs[j], cylReqs[j+1] = cylReqs[j+1], cylReqs[j]
+			}
+		}
+	}
+
+	// servicing cylinders moving up
+	for i := 0 ; i < len(cylReqs) ; i++ {
+		if cylError(cylReqs[i], lowerCyl, upperCyl) {
+			continue
+		}
+
+		if cylReqs[i] >= initCyl {
+			fmt.Printf("Servicing %d\n", cylReqs[i])
+		}
+	}
+
+	// servicing remaining cylinders
+	lastCyl := 0
+	onePass := true
+	if algorithm[0:1] == "c" {
+		lastCyl, onePass = frontTraversal(initCyl, lowerCyl, upperCyl, onePass, cylReqs)
 	} else {
-		higher = currCyl
-		lower = lastCyl
+		lastCyl, onePass = reverseTraversal(initCyl, lowerCyl, upperCyl, onePass, cylReqs)
 	}
 
-	circular := lower - start + max - higher
-	regular := higher - lower
-
-	if circular < regular {
-		return circular
-	}
-
-	return regular
-}
-
-
-
-/* scan */
-func scan(lowerCyl int, upperCyl int, initCyl int, cylReqs []int, direction int) int {
-	// bubble sort cylinder requests
-	for i := 0 ; i < len(cylReqs) ; i++ {
-		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
-			if cylReqs[j] > cylReqs[j+1] {
-				cylReqs[j], cylReqs[j+1] = cylReqs[j+1], cylReqs[j]
-			}
-		}
-	}
-
-	direction = scanTraversal(initCyl, cylReqs, direction)
-	direction = scanTraversal(initCyl, cylReqs, direction)
-
-	// started moving up
-	if direction > 0 {
-		return upperCyl - (initCyl + lowerCyl) + upperCyl - lowerCyl
-	} else {
-		// started moving down
-		return initCyl - lowerCyl + upperCyl - lowerCyl
+	// calculating traversal count
+	if onePass {
+		return cylReqs[len(cylReqs) - 1] - initCyl
+	} else if algorithm == "scan" {
+		return upperCyl - initCyl + upperCyl - lowerCyl - (lastCyl - lowerCyl)
+	} else if algorithm == "c-scan" {
+		return upperCyl - initCyl + upperCyl - lowerCyl + lastCyl - lowerCyl
+	} else if algorithm == "look" {
+		return cylReqs[len(cylReqs) - 1] - initCyl + cylReqs[len(cylReqs) - 1] - lowerCyl - (lastCyl - lowerCyl)
+	} else { // c-look
+		return cylReqs[len(cylReqs) - 1] - initCyl + cylReqs[len(cylReqs) - 1] - cylReqs[0] + lastCyl - cylReqs[0]
 	}
 }
 
-// TODO: error message for out of bounds cylinder req
-func scanTraversal(initCyl int, cylReqs []int, direction int) int {
-	if direction < 0 {
-		for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
-			if cylReqs[i] < initCyl {
-				fmt.Printf("Servicing %3d\n", cylReqs[i])
-			}
+// going back down
+func reverseTraversal(initCyl int, lowerCyl int, upperCyl int, onePass bool, cylReqs []int) (int, bool) {
+	lastCyl := initCyl
+
+	for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
+		if cylReqs[i] < initCyl && cylReqs[i] >= lowerCyl {
+			fmt.Printf("Servicing %d\n", cylReqs[i])
+			lastCyl = cylReqs[i]	
+			onePass = false		
 		}
+	}	
 
-		direction = 1
-	} else if direction > 0 {
-		for i := 0 ; i < len(cylReqs) ; i++ {
-			if cylReqs[i] > initCyl {
-				fmt.Printf("Servicing %3d\n", cylReqs[i])
-			}
-		}
-
-		direction = -1
-	}
-
-	return direction
+	return lastCyl, onePass
 }
 
+// servicing remaining cylinders from front
+func frontTraversal(initCyl int, lowerCyl int, upperCyl int, onePass bool, cylReqs []int) (int, bool) {
+	lastCyl := initCyl
+	i := 0
 
-
-/* c-scan */
-func cscan(lowerCyl int, upperCyl int, initCyl int, cylReqs []int, direction int) int {
-	// bubble sort cylinder requests
-	for i := 0 ; i < len(cylReqs) ; i++ {
-		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
-			if cylReqs[j] > cylReqs[j+1] {
-				cylReqs[j], cylReqs[j+1] = cylReqs[j+1], cylReqs[j]
-			}
-		}
+	for cylReqs[i] < initCyl && cylReqs[i] > lowerCyl {
+		fmt.Printf("Servicing %d\n", cylReqs[i])
+		lastCyl = cylReqs[i]
+		i++
+		onePass = false
 	}
 
-	direction = cscanTraversal(initCyl, cylReqs, direction)
-	cscanTraversal(initCyl, cylReqs, direction)
-
-	return upperCyl - lowerCyl + upperCyl - (initCyl + lowerCyl) + initCyl - lowerCyl
+	return lastCyl, onePass
 }
 
-// TODO: error message for out of bounds cylinder req
-func cscanTraversal(initCyl int, cylReqs []int, direction int) int {
-	if direction == 1 { // start moving up
-		for i := 0 ; i < len(cylReqs) ; i++ {
-			if cylReqs[i] > initCyl {
-				fmt.Printf("Servicing %3d\n", cylReqs[i])
-			}
-		}
-		direction = 2
-	} else if  direction == -1 { // start moving down
-		for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
-			if cylReqs[i] < initCyl {
-				fmt.Printf("Servicing %3d\n", cylReqs[i])
-			}
-		}
-		direction = -2
-	} else if direction == 2 { // finish from the front
-		for i := 0 ; i < len(cylReqs) ; i++ {
-			if cylReqs[i] >= initCyl {
-				break
-			}
-			fmt.Printf("Servicing %3d\n", cylReqs[i])
-		}
-
-	} else if direction == -2 { // finish from the back
-		for i := len(cylReqs) - 1 ; i >= 0 ; i-- {
-			if cylReqs[i] <= initCyl {
-				break
-			}
-			fmt.Printf("Servicing %3d\n", cylReqs[i])
-		}
-	}
-
-
-	return direction
-}
-
-
-
-/* look */
-func look(lowerCyl int, upperCyl int, initCyl int, cylReqs []int, direction int) int {
-	// bubble sort cylinder requests
-	for i := 0 ; i < len(cylReqs) ; i++ {
-		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
-			if cylReqs[j] > cylReqs[j+1] {
-				cylReqs[j], cylReqs[j+1] = cylReqs[j+1], cylReqs[j]
-			}
-		}
-	}
-
-	direction = scanTraversal(initCyl, cylReqs, direction)
-	direction = scanTraversal(initCyl, cylReqs, direction)
-
-	// started moving up
-	if direction > 0 {
-		return cylReqs[len(cylReqs) - 1] - (initCyl + cylReqs[0]) + cylReqs[len(cylReqs) - 1] - cylReqs[0]
-	} else {
-		// started moving down
-		return initCyl - cylReqs[0] + cylReqs[len(cylReqs) - 1] - cylReqs[0]
-	}
-}
-
-
-
-/* c-look */
-func clook(lowerCyl int, upperCyl int, initCyl int, cylReqs []int, direction int) int {
-	// bubble sort cylinder requests
-	for i := 0 ; i < len(cylReqs) ; i++ {
-		for j := 0 ; j < len(cylReqs) - i - 1 ; j++ {
-			if cylReqs[j] > cylReqs[j+1] {
-				cylReqs[j], cylReqs[j+1] = cylReqs[j+1], cylReqs[j]
-			}
-		}
-	}
-
-	direction = cscanTraversal(initCyl, cylReqs, direction)
-	cscanTraversal(initCyl, cylReqs, direction)
-
-	return cylReqs[len(cylReqs) - 1] - cylReqs[0] + cylReqs[len(cylReqs) - 1] - (initCyl + cylReqs[0]) + initCyl - cylReqs[0]
-}
-
+// checks bounds, prints error message
 func cylError(req int, lowerCyl int, upperCyl int) bool {
 	if req > upperCyl || req < lowerCyl {
-		fmt.Printf("Cylinder request %3d outside of bounds.\n", req)
+		fmt.Printf("Cylinder request %5d outside of bounds.\n", req)
 		return true
 	}
 
 	return false
 }
-

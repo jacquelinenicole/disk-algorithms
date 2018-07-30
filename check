@@ -1,0 +1,108 @@
+Seek algorithm: FCFS
+	Lower cylinder:     0
+	Upper cylinder:  3000
+	Init cylinder:    27
+	Cylinder requests:
+		Cylinder   300
+		Cylinder   200
+		Cylinder   100
+		Cylinder   450
+		Cylinder  2500
+		Cylinder    38
+Servicing   300
+Servicing   200
+Servicing   100
+Servicing   450
+Servicing  2500
+Servicing    38
+FCFS traversal count = 5335
+Seek algorithm: SSTF
+	Lower cylinder:     0
+	Upper cylinder:  3000
+	Init cylinder:    27
+	Cylinder requests:
+		Cylinder   300
+		Cylinder   200
+		Cylinder   100
+		Cylinder   450
+		Cylinder  2500
+		Cylinder    38
+Servicing 38
+Servicing 100
+Servicing 200
+Servicing 300
+Servicing 450
+Servicing 2500
+SSTF traversal count = 2473
+Seek algorithm: SCAN
+	Lower cylinder:     0
+	Upper cylinder:  3000
+	Init cylinder:    27
+	Cylinder requests:
+		Cylinder   300
+		Cylinder   200
+		Cylinder   100
+		Cylinder   450
+		Cylinder  2500
+		Cylinder    38
+Servicing 38
+Servicing 100
+Servicing 200
+Servicing 300
+Servicing 450
+Servicing 2500
+SCAN traversal count = 5946
+Seek algorithm: C-SCAN
+	Lower cylinder:     0
+	Upper cylinder:  3000
+	Init cylinder:    27
+	Cylinder requests:
+		Cylinder   300
+		Cylinder   200
+		Cylinder   100
+		Cylinder   450
+		Cylinder  2500
+		Cylinder    38
+Servicing 38
+Servicing 100
+Servicing 200
+Servicing 300
+Servicing 450
+Servicing 2500
+C-SCAN traversal count = 6000
+Seek algorithm: LOOK
+	Lower cylinder:     0
+	Upper cylinder:  3000
+	Init cylinder:    27
+	Cylinder requests:
+		Cylinder   300
+		Cylinder   200
+		Cylinder   100
+		Cylinder   450
+		Cylinder  2500
+		Cylinder    38
+Servicing 38
+Servicing 100
+Servicing 200
+Servicing 300
+Servicing 450
+Servicing 2500
+LOOK traversal count = 4946
+Seek algorithm: C-LOOK
+	Lower cylinder:     0
+	Upper cylinder:  3000
+	Init cylinder:    27
+	Cylinder requests:
+		Cylinder   300
+		Cylinder   200
+		Cylinder   100
+		Cylinder   450
+		Cylinder  2500
+		Cylinder    38
+Servicing 38
+Servicing 100
+Servicing 200
+Servicing 300
+Servicing 450
+Servicing 2500
+C-LOOK traversal count = 4924
